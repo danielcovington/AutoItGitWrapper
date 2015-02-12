@@ -7,9 +7,8 @@
 #AutoIt3Wrapper_UseX64=n
 #AutoIt3Wrapper_Res_Comment=Compile,Run,Check,Tidy or Strip your AutoIt3 script including options to update the resource information.
 #AutoIt3Wrapper_Res_Description=Compile,Run,Check,Tidy or Strip your AutoIt3 script including options to update the resource information.
-#AutoIt3Wrapper_Res_Fileversion=14.801.1932.0
+#AutoIt3Wrapper_Res_Fileversion=14.801.2025.8
 #AutoIt3Wrapper_Res_Fileversion_AutoIncrement=p
-#AutoIt3Wrapper_Res_Fileversion_First_Increment=y
 #AutoIt3Wrapper_Res_LegalCopyright=Copyright © 2014 Jos van der Zande
 #AutoIt3Wrapper_Res_Field=Made By|Jos van der Zande
 #AutoIt3Wrapper_Res_Field=Email|jdeb at autoitscript dot com
@@ -99,11 +98,18 @@ Else
 	$AutoIt3WapperIni = @ScriptDir & "\AutoIt3Wrapper.ini"
 	$UserData = @ScriptDir
 EndIf
-ConsoleWrite("+>         SciTEDir => " & $SciTE_Dir)
-ConsoleWrite("   UserDir => " & $UserData)
-If EnvGet("SCITE_HOME") <> "" Then ConsoleWrite('   SCITE_HOME => ' & EnvGet("SCITE_HOME") & " ")
-If EnvGet("SCITE_USERHOME") <> "" Then ConsoleWrite('   SCITE_USERHOME => ' & EnvGet("SCITE_USERHOME") & " ")
-ConsoleWrite("" & @CRLF)
+; Only display in case None of these tools are started
+If Not StringInStr($CMDLINERAW, "/watcher") _
+		And Not StringInStr($CMDLINERAW, "/au3record") _
+		And Not StringInStr($CMDLINERAW, "/au3info") _
+		And Not StringInStr($CMDLINERAW, "/Jump2FirstError") _
+		Then
+	ConsoleWrite("+>         SciTEDir => " & $SciTE_Dir)
+	ConsoleWrite("   UserDir => " & $UserData)
+	If EnvGet("SCITE_HOME") <> "" Then ConsoleWrite('   SCITE_HOME => ' & EnvGet("SCITE_HOME") & " ")
+	If EnvGet("SCITE_USERHOME") <> "" Then ConsoleWrite('   SCITE_USERHOME => ' & EnvGet("SCITE_USERHOME") & " ")
+	ConsoleWrite("" & @CRLF)
+EndIf
 #EndRegion AutoIt General Settings & Includes
 #Region Declare variables
 Global $ShowGUI = 0
@@ -544,14 +550,15 @@ Retrieve_PreProcessor_Info()
 ; set proper defaults and translate/validate values
 SetDefaults($INP_AutoIt3Wrapper_Testing, "n", "yes=y;no=n;1=y;0=n;4=n", "y;n", 0, 0)
 If $INP_AutoIt3Wrapper_Testing = "y" Then
-	ConsoleWrite("- *** Compile in Test mode skipping Tidy; Au3Check; Au3Stripper; Resource updating and Versioning to speed up the process. ***" & @CRLF)
+	ConsoleWrite("- *** Compile in Test mode skipping Tidy; Au3Stripper; Resource updating and Versioning to speed up the process. ***" & @CRLF)
+	;ConsoleWrite("- *** Compile in Test mode skipping Tidy; Au3Check; Au3Stripper; Resource updating and Versioning to speed up the process. ***" & @CRLF)
 EndIf
 SetDefaults($INP_AutoIt3_Version, "Prod", "P=Prod;B=Beta", "Prod;Beta", 0)
 SetDefaults($ScriptFile_Out_Type, "exe", "", "exe;a3x", 0)
 If Not ($INP_AutoItDir = "") And FileExists($INP_AutoItDir & "\AutoIt3.exe") Then $CurrentAutoIt_InstallDir = $INP_AutoItDir
 ;
 If Not FileExists($CurrentAutoIt_InstallDir & "\AutoIt3.exe") Then
-	ConsoleWrite("! Unable to determine the location of the AutoIt3 program directory!" & @CRLF)
+	ConsoleWrite("! Unable to determine the location of the AutoIt3 program directory! " & @CRLF & "  Directory:" & $CurrentAutoIt_InstallDir & " doesn't contain Autoit3.Exe" & @CRLF)
 	Exit
 EndIf
 If $INP_AutoIt3_Version = "Beta" And FileExists($CurrentAutoIt_InstallDir & "\Beta\AutoIt3.exe") Then
@@ -589,7 +596,7 @@ SetDefaults($INP_Run_SciTE_OutputPane_Minimized, "n", "yes=y;no=n;1=y;0=n;4=n", 
 SetDefaults($INP_Run_PreExpand, "n", "yes=y;no=n;1=y;0=n;4=n", "y;n", 0, 0)
 SetDefaults($INP_ShowStatus, "y", "yes=y;no=n;1=y;0=n;4=n", "y;n", 0, 0)
 ; Show GUI when requested but only during Compile
-If $ShowGUI And $Option = "Compile" And $InputFileIsUTF8 <> 9 Then GUI_Show()
+If $ShowGUI And $Option = "Compile" Then GUI_Show()
 ;
 If $ScriptFile_Out = StringRight($ScriptFile_In, StringLen($ScriptFile_In)) Then
 	ConsoleWrite("- Cannot specify the same output filename as the inputfile: " & $ScriptFile_Out & " ==> Changing to default (scriptname.exe)." & @CRLF)
@@ -952,24 +959,20 @@ If $Option = "Compile" Then
 	EndIf
 	; Check if Version need to be incremented before Compilation
 	If $INP_Fileversion_First_Increment = "y" Then
-		If $InputFileIsUTF8 = 9 Then
-			ConsoleWrite("- Skipping Updated of the Source Version because this file is detected as UTF8 without BOM which could cause script corruption." & @CRLF)
-		Else
-			If $INP_Fileversion_AutoIncrement = "p" Then
-				$INP_Fileversion = Valid_FileVersion($INP_Fileversion)
-				If $INP_AutoIt3Wrapper_Testing = "n" And MsgBox(262144 + 4096 + 4, "AutoIt3Wrappper", "Do you want to increase the version number of the source to:" & @LF & $INP_Fileversion_New, 10) = 6 Then
-					$INP_Fileversion_AutoIncrement = 'y'
-				Else
-					$INP_Fileversion_New = $INP_Fileversion
-				EndIf
+		$INP_Fileversion = Valid_FileVersion($INP_Fileversion)
+		If $INP_Fileversion_AutoIncrement = "p" Then
+			If $INP_AutoIt3Wrapper_Testing = "n" And MsgBox(262144 + 4096 + 4, "AutoIt3Wrappper", "Do you want to increase the version number of the source to:" & @LF & $INP_Fileversion_New, 10) = 6 Then
+				$INP_Fileversion_AutoIncrement = 'y'
+			Else
+				$INP_Fileversion_New = $INP_Fileversion
 			EndIf
-			; Process when there is something to update
-			If $INP_Fileversion <> $INP_Fileversion_New Then
-				; Set the Fileversion to the new one before compilation
-				$INP_Fileversion = $INP_Fileversion_New
-				; Update the sourcefile
-				Update_Version()
-			EndIf
+		EndIf
+		; Process when there is something to update
+		If $INP_Fileversion_New <> "" And $INP_Fileversion <> $INP_Fileversion_New Then
+			; Set the Fileversion to the new one before compilation
+			$INP_Fileversion = $INP_Fileversion_New
+			; Update the sourcefile
+			Update_Version()
 		EndIf
 	EndIf
 	; Compile x86 version
@@ -1106,11 +1109,7 @@ If $Option = "Compile" Then
 	;
 	; Increment the #AutoIt3Wrapper_Res_Fileversion= value in the source file but only when not UTF8 wihtout BOM to avoid problems.
 	If $INP_Fileversion_First_Increment = "N" Then
-		If $InputFileIsUTF8 = 9 Then
-			ConsoleWrite("- Skipping Updated of the Source Version because this file is detected as UTF8 without BOM which could cause script corruption." & @CRLF)
-		Else
-			Update_Version()
-		EndIf
+		Update_Version()
 	EndIf
 	#EndRegion Update FileVersion
 	;
@@ -1175,7 +1174,7 @@ Func Run_the_Script($Init = 0)
 	_ProcessCloseHandle($Handle)
 	Write_RC_Console_Msg("AutoIt3.exe ended.", $ExitCode)
 	;
-	If $INP_Run_Debug_Mode Then FileDelete($sDebugFile)
+	If $INP_Run_Debug_Mode Then FileRecycle($sDebugFile)
 	;
 	If $INP_Run_SciTE_Minimized = "y" Then
 		WinSetState("[CLASS:SciTEWindow]", "", @SW_RESTORE)
@@ -1198,7 +1197,13 @@ Func Update_Version()
 			If $INP_Fileversion_New <> "" Then
 				$ToTalFile = @CRLF & FileRead($ScriptFile_In_Org)
 				; added & chr(61) & to avoid replacing this statement when the version is updated
-				$ToTalFile = StringRegExpReplace($ToTalFile, '(?i)' & @CRLF & '(\h*?)#AutoIt3Wrapper_Res_Fileversion(\h*?)=(.*?)' & @CRLF, @CRLF & '\1#AutoIt3Wrapper_Res_Fileversion=' & $INP_Fileversion_New & @CRLF)
+;~ 				#AutoIt3Wrapper_Res_Fileversion=0.64.0.6
+;~ 				#pragma compile(Fileversion, 0.62)
+				If $Pragma_Used Then
+					$ToTalFile = StringRegExpReplace($ToTalFile, '(?i)' & @CRLF & '(\h*?)#pragma compile(\h*?)\((\h*?)Fileversion(\h*?),(\h*?)(.*?)\)' & @CRLF, @CRLF & '\1#pragma compile(Fileversion, ' & $INP_Fileversion_New & ")" & @CRLF)
+				Else
+					$ToTalFile = StringRegExpReplace($ToTalFile, '(?i)' & @CRLF & '(\h*?)#AutoIt3Wrapper_Res_Fileversion(\h*?)=(.*?)' & @CRLF, @CRLF & '\1#AutoIt3Wrapper_Res_Fileversion=' & $INP_Fileversion_New & @CRLF)
+				EndIf
 				$H_Outf = FileOpen($ScriptFile_In_Org, 2 + $SrceUnicodeFlag)
 				FileWrite($H_Outf, StringMid($ToTalFile, 3))
 				FileClose($H_Outf)
@@ -2267,6 +2272,17 @@ Func Compile_Run_AUT2EXE($out_env, $ScriptFile_Out)
 	$Pid = Run('"' & $AUT2EXE_PGM & '"' & $s_CMDLine, "", @SW_HIDE, $STDERR_CHILD + $STDOUT_CHILD)
 	If $Pid Then
 		$Handle = _ProcessExitCode($Pid)
+		While ProcessExists($Pid)
+			If WinExists("Aut2Exe Error", "Error adding file") Then
+				Local $errtxt = StringReplace(WinGetText("Aut2Exe Error", "Error adding file"), @LF, " ")
+				$errtxt = StringReplace($errtxt, "OK", "")
+				WinClose("Aut2Exe Error", "Error adding file")
+				Write_RC_Console_Msg("Aut2exe.exe encountered an error ended with error: " & $errtxt & ".", 2)
+				Write_RC_Console_Msg("Target exe is not created, abandon build.", 2)
+				Exit 1
+			EndIf
+			Sleep(100)
+		WEnd
 		ProcessWaitClose($Pid)
 		; Show console output
 		ShowStdOutErr($Pid)
@@ -2276,18 +2292,18 @@ Func Compile_Run_AUT2EXE($out_env, $ScriptFile_Out)
 	EndIf
 	;
 	If Not $Pid Or Not FileExists($ScriptFile_Out) Then
-		Write_RC_Console_Msg("Aut2exe.exe ended with errors because the target exe wasn't created, abandon build. (" & $ScriptFile_Out & ")", 9999)
-		Exit
+		Write_RC_Console_Msg("Aut2exe.exe ended with errors because the target exe wasn't created, abandon build. (" & $ScriptFile_Out & ")", 2)
+		Exit 1
 	Else
 		Write_RC_Console_Msg("Aut2exe.exe ended." & $ScriptFile_Out & ". ", $ExitCode)
 	EndIf
 EndFunc   ;==>Compile_Run_AUT2EXE
 ;
 Func Compile_Upd_res($ScriptFile_Out)
-	Local $ResUpdateNew = 0
+	Local $ResUpdatePragmaSupported = 0
 	Local $ResUpdateSuccess = 1
 	; No need to retrieve the program resource after 3.3.9.x
-	$ResUpdateNew = _VersionCompare($AUT2EXE_PGM_VER, "3.3.9.4") = 1
+	$ResUpdatePragmaSupported = _VersionCompare($AUT2EXE_PGM_VER, "3.3.9.4") = 1
 	;-------------------------------------------------------------------------------------------
 	; Update resources only if needed and the outfile is an EXE
 	If _Check_Res_Updates_Defined() And StringRight($ScriptFile_Out, 4) = ".exe" Then
@@ -2296,7 +2312,7 @@ Func Compile_Upd_res($ScriptFile_Out)
 		$ResUpdateSuccess = 0
 		; get and save 'extra data' at end of script
 		Local $extraData, $dwSize = 0
-		If Not $ResUpdateNew And (Not _getFileExtraData($ScriptFile_Out, $extraData, $dwSize) Or $dwSize = 0) Then
+		If Not $ResUpdatePragmaSupported And (Not _getFileExtraData($ScriptFile_Out, $extraData, $dwSize) Or $dwSize = 0) Then
 			; something went wrong
 			Write_RC_Console_Msg("Error: Failed to get script data from end of target file.  Skipping resource update.", 2)
 		Else
@@ -2311,24 +2327,25 @@ Func Compile_Upd_res($ScriptFile_Out)
 			; ########################################################################################
 			If $Pragma_Comment <> "" Or $Pragma_Company <> "" Or $Pragma_Description <> "" Or $Pragma_Fileversion <> "" Or $Pragma_InternalName <> "" Or $Pragma_LegalCopyright <> "" _
 					Or $Pragma_LegalTradeMarks <> "" Or $Pragma_Productname <> "" Or $Pragma_ProductVersion <> "" Then
-				If $ResUpdateNew Then
+				If $ResUpdatePragmaSupported Then
 					ConsoleWrite("> #pragma Compile() found that updates the VERSION Resources." & @CRLF)
 					ConsoleWrite("-    Ignoring all #AutoIt3Wrapper_* #directives that would normally update the VERSION section!" & @CRLF)
 					$INP_Res_Language = ""
 					$INP_Comment = ""
 					$INP_Description = ""
-					$INP_Fileversion = ""
+					$INP_Fileversion = $Pragma_Fileversion
 					$INP_ProductVersion = ""
 					$INP_LegalCopyright = ""
 					$INP_Res_FieldCount = 0
 					$INP_FieldValue1 = ""
 					$INP_FieldValue2 = ""
 				Else
+					$Pragma_Used = 0
 					ConsoleWrite("- Ignoring all #pragma Compile() statements for VERSION update because AutoIt3 version: " & $AUT2EXE_PGM_VER & " doesn't support it!" & @CRLF)
 				EndIf
 			EndIf
 			; create the source of the VERSION resource update file
-			If _Check_Res_Updates_Defined(1) Then
+			If Not $Pragma_Used And _Check_Res_Updates_Defined(1) Then
 				Local $Version_Res_File = ""
 				; enum RT_VERSION resources in target file
 				If Not _EnumResourceNamesAndLangs($ScriptFile_Out, 16) Then ; RT_VERSION
@@ -2368,7 +2385,7 @@ Func Compile_Upd_res($ScriptFile_Out)
 			; ########################################################################################
 			If $Pragma_RES_requestedExecutionLevel <> "" Or $Pragma_RES_Compatibility <> "" Then
 				; No need to retrieve the program resource after 3.3.9.x
-				If $ResUpdateNew Then
+				If $ResUpdatePragmaSupported Then
 					ConsoleWrite("> #pragma Compile() found that updates the MANIFEST Resources." & @CRLF)
 					ConsoleWrite("-    Ignoring all #AutoIt3Wrapper_* #directives that would normally update the MANIFEST section!" & @CRLF)
 					$INP_Res_requestedExecutionLevel = ""
@@ -2525,7 +2542,7 @@ Func Compile_Upd_res($ScriptFile_Out)
 				Show_Warnings("Resource Update errors", $Return_Text)
 			Else
 				; append 'extra data' back to end of updated script
-				If Not $ResUpdateNew And Not _appendFileExtraData($ScriptFile_Out, $extraData, $dwSize) Then
+				If Not $ResUpdatePragmaSupported And Not _appendFileExtraData($ScriptFile_Out, $extraData, $dwSize) Then
 					; something ELSE went wrong
 					Write_RC_Console_Msg("Error: Failed to append script data to end of updated executable. Try recompiling your script.", 2)
 					Exit
@@ -2783,15 +2800,7 @@ Func Retrieve_PreProcessor_Info()
 		; check for UTF8 without BOM, if so Warn and tell them the file will be changed to UTF8 with BOM
 		If $aFile_len > StringLen($aFile_tot) Then
 			$UTFtype = '8 Without BOM'
-			$SrceUnicodeFlag = 128
-			ConsoleWrite("! ***************************************************************************************************************" & @CRLF)
-			ConsoleWrite("! * Input file is UTF8 without BOM encoded, Au3Stripper do not support UNICODE and will be skipped.      *" & @CRLF)
-			ConsoleWrite("! * The file SHOULD BE encoded as UTF8 with BOM to continue processing by AutoIt3Wrapper.                       *" & @CRLF)
-			ConsoleWrite("! *    #####################################################################################################    *" & @CRLF)
-			ConsoleWrite("! * ##### AutoIt3Wrapper will not show a GUI or update the script to avoid any damage to your scriptfile. ##### *" & @CRLF)
-			ConsoleWrite("! *    #####################################################################################################    *" & @CRLF)
-			ConsoleWrite("! * When your file isn't a UTF8 file without BOM then please report this to me for review.                      *" & @CRLF)
-			ConsoleWrite("! ***************************************************************************************************************" & @CRLF)
+			$SrceUnicodeFlag = 256
 			$InputFileIsUTF8 = 9
 		EndIf
 	EndIf
@@ -2802,7 +2811,8 @@ Func Retrieve_PreProcessor_Info()
 		$In_File = StringSplit($aFile_tot, @CR)
 	Else ;; unable to split the file
 		If StringLen($aFile_tot) Then
-			Dim $In_File[2] = [1, $aFile]
+			$aFile_tot &= @LF
+			$In_File = StringSplit(StringStripCR($aFile_tot), @LF)
 		Else
 			Return SetError(2, 0, 0)
 		EndIf
@@ -2949,11 +2959,11 @@ Func Retrieve_PreProcessor_Info()
 			Case $i_Rec_Param = "#AutoIt3Wrapper_Compile_both"
 				$INP_Compile_Both = $i_Rec_Value
 			Case $i_Rec_Param = "#AutoIt3Wrapper_OutFile"
-				$ScriptFile_Out = StringReplace($i_Rec_Value, '"', '')
+				$ScriptFile_Out = Convert_Variables(StringReplace($i_Rec_Value, '"', ''))
 			Case $i_Rec_Param = "#AutoIt3Wrapper_OutFile_x64"
-				$ScriptFile_Out_x64 = StringReplace($i_Rec_Value, '"', '')
+				$ScriptFile_Out_x64 = Convert_Variables(StringReplace($i_Rec_Value, '"', ''))
 			Case $i_Rec_Param = "#AutoIt3Wrapper_OutFile_x86"
-				$ScriptFile_Out_x86 = StringReplace($i_Rec_Value, '"', '')
+				$ScriptFile_Out_x86 = Convert_Variables(StringReplace($i_Rec_Value, '"', ''))
 			Case $i_Rec_Param = "#AutoIt3Wrapper_OutFile_Type"
 				$ScriptFile_Out_Type = $i_Rec_Value
 				If $ScriptFile_Out_Type <> "A3X" And $ScriptFile_Out_Type <> "EXE" Then
@@ -3038,7 +3048,7 @@ Func Retrieve_PreProcessor_Info()
 			Case $i_Rec_Param = "#AutoIt3Wrapper_Res_Fileversion_First_Increment"
 				$INP_Fileversion_First_Increment = $i_Rec_Value
 			Case $i_Rec_Param = "#AutoIt3Wrapper_Res_ProductVersion"
-				$INP_ProductVersion = $i_Rec_Value
+				$INP_ProductVersion = Convert_Variables($i_Rec_Value)
 			Case $i_Rec_Param = "#AutoIt3Wrapper_Res_LegalCopyright"
 				$INP_LegalCopyright = $i_Rec_Value
 				; limited number of free format resource info fields
@@ -3243,7 +3253,7 @@ Func RunAutoItDebug($sFileToDebug, ByRef $sDebugFile)
 	;
 	Local $fhFileToDebug, $fhDebugFile
 	Local $iLineNumber, $sCurrentLine, $sComment, $sModifiedLine, $bDebugging
-	Local $iRandom = '', $sIndent, $sTitle, $x
+	Local $iRandom = '', $sIndent, $sTitle, $x, $CaseFix
 	Local $sDrive, $sDir, $sFName, $iSavedLine, $I_Rec, $i_Rec_Param, $i_Rec_Value
 	_PathSplit($sFileToDebug, $sDrive, $sDir, $sFName, $x)
 	; The title of our debug window will be the filename portion only, but with "_DebugIt" added.
@@ -3304,6 +3314,23 @@ Func RunAutoItDebug($sFileToDebug, ByRef $sDebugFile)
 		EndIf
 		If StringStripWS($sCurrentLine, 8) = ";debug" Then
 			$bDebugging = Not $bDebugging
+			$iLineNumber += 1
+			FileWriteLine($fhDebugFile, $sCurrentLine)
+			ContinueLoop
+		EndIf
+		; Don't write debugging statements between Switch and Case
+		If $bDebugging And (StringLeft(StringStripWS($sCurrentLine, 8), 6) = "Switch" Or StringLeft(StringStripWS($sCurrentLine, 8), 6) = "Select") Then
+			$bDebugging = 0
+			$CaseFix = 1
+			$iLineNumber += 1
+			FileWriteLine($fhDebugFile, $sCurrentLine)
+			ContinueLoop
+		EndIf
+		If StringLeft(StringStripWS($sCurrentLine, 8), 4) = "Case" Then
+			If $CaseFix Then
+				$bDebugging = 1
+				$CaseFix = 0
+			EndIf
 			$iLineNumber += 1
 			FileWriteLine($fhDebugFile, $sCurrentLine)
 			ContinueLoop
