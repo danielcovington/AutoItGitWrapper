@@ -13,6 +13,6 @@ I use AutoIt all the time. I like to use Git to version the scripts that I write
 - [ ] extend rather than re-implement Versioning already built into the Wrapper.
 - [ ] add code to handle git.
 - [ ] verify that the patched AutoIt3Wrapper.au3 and .exe both work on a clean install.
-- [] Make it easy and seemless to use
+- [ ] Make it easy and seemless to use
 
 These maybe a touch ambitous and you are more then welcome to contribute, criticize, and test what I have here. Hopefully if you use AutoIt and Git it will help in the end.
