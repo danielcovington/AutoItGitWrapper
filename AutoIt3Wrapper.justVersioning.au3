@@ -3,6 +3,63 @@
 #AutoIt3Wrapper_Versioning_Parameters=/Comments %fileversion%
 #EndRegion ;**** Directives created by AutoIt3Wrapper_GUI *****
 
+Global $AutoIt3WapperIni
+; Check for SCITE_USERHOME Env variable and used that when specified.
+; Else use Program directory
+If EnvGet("SCITE_USERHOME") <> "" And FileExists(EnvGet("SCITE_USERHOME") & "\AutoIt3Wrapper") Then
+	$AutoIt3WapperIni = EnvGet("SCITE_USERHOME") & "\AutoIt3Wrapper\AutoIt3Wrapper.ini"
+	$UserData = EnvGet("SCITE_USERHOME") & "\AutoIt3Wrapper"
+ElseIf EnvGet("SCITE_HOME") <> "" And FileExists(EnvGet("SCITE_HOME") & "\AutoIt3Wrapper") Then
+	$AutoIt3WapperIni = EnvGet("SCITE_HOME") & "\AutoIt3Wrapper\AutoIt3Wrapper.ini"
+	$UserData = EnvGet("SCITE_HOME") & "\AutoIt3Wrapper"
+Else
+	$AutoIt3WapperIni = @ScriptDir & "\AutoIt3Wrapper.ini"
+	$UserData = @ScriptDir
+EndIf
+
+;Retrieve AutoIt3Wrapper Defaults from AutoIt3Wrapper.INI
+If $ScriptFile_Out_Type = "" Then $ScriptFile_Out_Type = IniRead($AutoIt3WapperIni, "AutoIt", "outfile_type", "")
+If $INP_Icon = "" Then $INP_Icon = IniRead($AutoIt3WapperIni, "AutoIt", "icon", "")
+If $INP_Compression = "" Then $INP_Compression = IniRead($AutoIt3WapperIni, "AutoIt", "Compression", "")
+;~ If $INP_PassPhrase = "" Then $INP_PassPhrase = IniRead($AutoIt3WapperIni, "AutoIt", "PassPhrase", "")
+;~ If $INP_PassPhrase2 = "" Then $INP_PassPhrase2 = IniRead($AutoIt3WapperIni, "AutoIt", "PassPhrase", "")
+;~ If $INP_Allow_Decompile = "" Then $INP_Allow_Decompile = IniRead($AutoIt3WapperIni, "AutoIt", "Allow_Decompile", "")
+If $INP_UseUpx = "" Then $INP_UseUpx = IniRead($AutoIt3WapperIni, "AutoIt", "UseUpx", "")
+;~ If $INP_UseAnsi = "" Then $INP_UseAnsi = IniRead($AutoIt3WapperIni, "AutoIt", "UseAnsi", "")
+If $INP_UseX64 = "" Then $INP_UseX64 = IniRead($AutoIt3WapperIni, "AutoIt", "UseX64", "")
+If $INP_AutoItDir = "" Then $AUT2EXE_PGM = IniRead($AutoIt3WapperIni, "AutoIt", "aut2exe", "")
+If $INP_Res_Language = "" Then $INP_Res_Language = IniRead($AutoIt3WapperIni, "Res", "Language", "")
+If $INP_Res_requestedExecutionLevel = "" Then $INP_Res_requestedExecutionLevel = IniRead($AutoIt3WapperIni, "Res", "RequestedExecutionLevel", "")
+If $INP_Res_Compatibility = "" Then $INP_Res_Compatibility = IniRead($AutoIt3WapperIni, "Res", "Compatibility", "")
+If $INP_Comment = "" Then $INP_Comment = IniRead($AutoIt3WapperIni, "Res", "Comment", "")
+If $INP_Description = "" Then $INP_Description = IniRead($AutoIt3WapperIni, "Res", "Description", "")
+If $INP_Fileversion = "" Then $INP_Fileversion = IniRead($AutoIt3WapperIni, "Res", "Fileversion", "")
+If $INP_Fileversion_AutoIncrement = "" Then $INP_Fileversion_AutoIncrement = IniRead($AutoIt3WapperIni, "Res", "Fileversion_AutoIncrement", "")
+If $INP_Fileversion_First_Increment = "" Then $INP_Fileversion_First_Increment = IniRead($AutoIt3WapperIni, "Res", "Fileversion_First_AutoIncrement", "")
+If $INP_ProductVersion = "" Then $INP_ProductVersion = IniRead($AutoIt3WapperIni, "Res", "ProductVersion", "")
+If $INP_LegalCopyright = "" Then $INP_LegalCopyright = IniRead($AutoIt3WapperIni, "Res", "LegalCopyright", "")
+If $INP_Res_SaveSource = "" Then $INP_Res_SaveSource = IniRead($AutoIt3WapperIni, "Res", "SaveSource", "")
+If $INP_FieldName1 = "" Then $INP_FieldName1 = IniRead($AutoIt3WapperIni, "Res", "Field1Name", "")
+If $INP_FieldValue1 = "" Then $INP_FieldValue1 = IniRead($AutoIt3WapperIni, "Res", "Field1Value", "")
+If $INP_FieldName2 = "" Then $INP_FieldName2 = IniRead($AutoIt3WapperIni, "Res", "Field2Name", "")
+If $INP_FieldValue2 = "" Then $INP_FieldValue2 = IniRead($AutoIt3WapperIni, "Res", "Field2Value", "")
+If $INP_Run_Tidy = "" Then $INP_Run_Tidy = IniRead($AutoIt3WapperIni, "Other", "Run_Tidy", "")
+If $INP_Tidy_Parameters = "" Then $INP_Tidy_Parameters = IniRead($AutoIt3WapperIni, "Other", "Tidy_Parameter", "")
+If $INP_Run_Au3Stripper = "" Then $INP_Run_Au3Stripper = IniRead($AutoIt3WapperIni, "Other", "Run_Au3Stripper", "")
+If $INP_Au3Stripper_Parameters = "" Then $INP_Au3Stripper_Parameters = IniRead($AutoIt3WapperIni, "Other", "Au3Stripper_Parameters", "")
+If $INP_Run_AU3Check = "" Then $INP_Run_AU3Check = IniRead($AutoIt3WapperIni, "Other", "Run_AU3Check", "")
+If $INP_Jump_To_First_Error = "" Then $INP_Run_AU3Check = IniRead($AutoIt3WapperIni, "Other", "Jump_To_First_Error", "")
+If $INP_AU3Check_Stop_OnWarning = "" Then $INP_AU3Check_Stop_OnWarning = IniRead($AutoIt3WapperIni, "Other", "AU3Check_Stop_OnWarning", "")
+If $INP_AU3Check_Parameters = "" Then $INP_AU3Check_Parameters = IniRead($AutoIt3WapperIni, "Other", "AU3Check_Parameter", "")
+If $INP_Run_Before[1] = "" Then $INP_Run_Before = StringSplit(IniRead($AutoIt3WapperIni, "Other", "Run_Before", ""), "|")
+If $INP_Run_After[1] = "" Then $INP_Run_After = StringSplit(IniRead($AutoIt3WapperIni, "Other", "Run_After", ""), "|")
+If $INP_Run_Versioning = "" Then $INP_Run_Versioning = IniRead($AutoIt3WapperIni, "Other", "Run_Versioning", "")
+If $INP_Versioning_Parameters = "" Then $INP_Versioning_Parameters = IniRead($AutoIt3WapperIni, "Other", "VersionWrapper_Parameter", "")
+If $INP_Change2CUI = "" Then $INP_Change2CUI = IniRead($AutoIt3WapperIni, "Other", "Change2CUI", "")
+If $INP_ShowStatus = "" Then $INP_ShowStatus = IniRead($AutoIt3WapperIni, "Other", "ShowProgress", "")
+; set dir for all temporary files, fall back to @TempDir if it doesn't exist
+$TempDir = _WinAPI_ExpandEnvironmentStrings(IniRead($AutoIt3WapperIni, "Other", "TempDir", ""))
+
 #Region Versioning functions
 #Region MainFunc Versioning
 Func Versioning($SourceFile, $INP_Versioning_Parameters)
