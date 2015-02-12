@@ -2,8 +2,117 @@
 #AutoIt3Wrapper_Versioning=v
 #AutoIt3Wrapper_Versioning_Parameters=/Comments %fileversion%
 #EndRegion ;**** Directives created by AutoIt3Wrapper_GUI *****
+#include <File.au3>
+#include <MsgBoxConstants.au3>
+#include <GUIConstantsEx.au3>
+#include <StaticConstants.au3>
+#include <WindowsConstants.au3>
+#include <FileConstants.au3>
+#include <WinAPI.au3>
+
+
 
 Global $AutoIt3WapperIni
+Global Const $tagIMAGE_FILE_HEADER = _
+		"ushort Machine;" & _
+		"ushort NumberOfSections;" & _
+		"dword TimeDateStamp;" & _
+		"dword PointerToSymbolTable;" & _
+		"dword NumberOfSymbols;" & _
+		"ushort SizeOfOptionalHeader;" & _
+		"ushort Characteristics"
+Global $tagTEMP = _
+		"ushort Magic;" & _ ; Standard fields
+		"byte MajorLinkerVersion;" & _
+		"byte MinorLinkerVersion;" & _
+		"dword SizeOfCode;" & _
+		"dword SizeOfInitializedData;" & _
+		"dword SizeOfUninitializedData;" & _
+		"dword AddressOfEntryPoint;" & _
+		"dword BaseOfCode;" & _
+		"dword BaseOfData;" & _
+		"dword ImageBase;" & _ ; NT additional fields
+		"dword SectionAlignment;" & _
+		"dword FileAlignment;" & _
+		"ushort MajorOperatingSystemVersion;" & _
+		"ushort MinorOperatingSystemVersion;" & _
+		"ushort MajorImageVersion;" & _
+		"ushort MinorImageVersion;" & _
+		"ushort MajorSubsystemVersion;" & _
+		"ushort MinorSubsystemVersion;" & _
+		"dword Win32VersionValue;" & _
+		"dword SizeOfImage;" & _
+		"dword SizeOfHeaders;" & _
+		"dword CheckSum;" & _
+		"ushort Subsystem;" & _
+		"ushort DllCharacteristics;" & _
+		"dword SizeOfStackReserve;" & _
+		"dword SizeOfStackCommit;" & _
+		"dword SizeOfHeapReserve;" & _
+		"dword SizeOfHeapCommit;" & _
+		"dword LoaderFlags;" & _
+		"dword NumberOfRvaAndSizes"
+; assign indexes to each IMAGE_DATA_DIRECTORY struct so we can find them later
+For $i = 0 To 15
+	$tagTEMP &= ";ulong VirtualAddress" & $i & ";ulong Size" & $i
+Next
+Global Const $tagIMAGE_OPTIONAL_HEADER = $tagTEMP
+$tagTEMP = 0
+Global Const $tagIMAGE_NT_HEADERS = _
+		"dword Signature;" & _
+		$tagIMAGE_FILE_HEADER & ";" & _ ; offset = 4
+		$tagIMAGE_OPTIONAL_HEADER ; offset = 24
+Global $g_aResNamesAndLangs[1][2] = [[0, 0]] ; reset array
+Global $rh, $hLangCallback
+Global $aVersionInfo, $aManifestInfo, $aTemp
+Global $IconFileInfo
+Global $ScriptFile_In = "", $ScriptFile_In_Ext = "", $ScriptFile_In_stripped = "", $ScriptFile_Out = "", $ScriptFile_Out_x86 = "", $ScriptFile_Out_x64 = "", $ScriptFile_Out_Type = ""
+Global $INP_Compile_Both = 0
+Global $INP_Icon = "", $INP_Compression = "", $INP_AutoIt3_Version = ""
+Global $AutoIt3_PGM = "", $AUT2EXE_PGM = "", $INP_AutoItDir = ""
+Global $Pragma_Used = 0
+Global $Pragma_Out = "", $Pragma_Icon = "n", $Pragma_RES_requestedExecutionLevel = "", $Pragma_UseUpx = "", $Pragma_Change2CUI = "", $Pragma_Compression = "", $Pragma_RES_Compatibility = ""
+Global $Pragma_Out_x64 = "", $Pragma_Comment = "", $Pragma_Company = "", $Pragma_Description = "", $Pragma_Fileversion = "", $Pragma_InternalName = "", $Pragma_LegalCopyright = "", $Pragma_LegalTradeMarks = ""
+Global $Pragma_Productname = "", $Pragma_ProductVersion = ""
+Global $INP_Run_Debug_Mode = 0, $INP_UseUpx = "", $INP_Upx_Parameters = "", $INP_UseAnsi = "n", $INP_UseX64 = "", $INP_Comment = "", $INP_Description = "", $INP_Res_SaveSource = ""
+Global $INP_Res_Language = "", $INP_Res_requestedExecutionLevel = "", $INP_Res_Compatibility = "", $INP_Fileversion = "", $INP_Fileversion_New = "", $INP_Fileversion_AutoIncrement = "", $INP_Fileversion_First_Increment = "", $INP_LegalCopyright = ""
+Global $INP_ProductVersion = "", $INP_CompiledScript = "", $INP_FieldName1 = "", $INP_FieldValue1 = "", $INP_FieldName2 = "", $INP_FieldValue2 = "", $INP_Res_FieldCount = 0, $INP_FieldName[16]
+Global $INP_FieldValue[16], $INP_Run_Tidy = "", $INP_Run_Au3Stripper = "", $INP_Tidy_Stop_OnError = "Y", $INP_Run_AU3Check = "", $INP_Jump_To_First_Error = "Y", $INP_Add_Constants = "", $INP_Run_SciTE_Minimized = "n", $INP_Run_SciTE_OutputPane_Minimized = "n"
+Global $INP_AU3Check_Stop_OnWarning, $INP_AU3Check_Parameters, $INP_Run_Before[2], $INP_Run_After[2], $INP_Run_Before_Admin[2], $INP_Run_After_Admin[2], $INP_Run_Versioning, $INP_Versioning_Parameters
+Global $INP_Plugin, $INP_Change2CUI, $INP_Icons[1], $INP_Icons_cnt = 0, $INP_Res_Files[1], $INP_Res_Files_Cnt = 0, $TempFile, $TempFile2, $TempDir
+Global $INP_Au3check_Plugin, $INP_Tidy_Parameters = "", $INP_Au3Stripper_Parameters = "", $INP_AutoIt3Wrapper_LogFile = "", $INP_AutoIt3Wrapper_If = "", $INP_AutoIt3Wrapper_Testing = "N"
+Global $INP_Run_PreExpand = "N"
+Global $INP_ShowStatus = ""
+Global $ScriptFile_In_Org
+Global $H_Resource, $H_Comment, $H_Description, $H_Fileversion, $H_Fileversion_AutoIncrement_n, $H_Fileversion_AutoIncrement_p, $H_Fileversion_AutoIncrement_y
+Global $H_LegalCopyright, $H_FieldNameEdit, $H_Res_Language
+Global $IconResBase = 49
+Global $Au3StripperCmdLine
+Global $DebugIcon = ""
+Global $Parameter_Mode = 0
+Global $Debug = 0
+Global $Registry = "HKCU\Software\AutoIt v3"
+Global $RegistryLM = "HKLM\Software\AutoIt v3\AutoIt"
+Global $Option = "Compile"
+Global $s_CMDLine = ""
+Global $ToTalFile
+Global $H_Outf
+Global $CurSciTEFile, $CurSciTELine, $FindVer, $CurSelection
+Global $dummy, $V_Arg, $T_Var, $H_Cmp, $H_au3, $rc, $Save_Workdir, $AUT2EXE_DIR, $AUT2EXE_PGM_N, $msg, $AUT2EXE_PGM_VER
+Global $LSCRIPTDIR, $AutoIt_Icon, $INP_Icon_Temp, $AutoIt_Icon_Dir
+Global $InputFileIsUTF8 = 0
+Global $InputFileIsUTF16 = 0
+Global $InputFileIsUTF32 = 0
+Global $ProcessBar_Title
+Global $Pid, $Handle, $Return_Text, $ExitCode
+Global $sCmd
+Global $SrceUnicodeFlag, $UTFtype
+Global $Found_Old_ObfuscatorDirective = 0
+;
+Global $CurrentAutoIt_InstallDir = _PathFull(@ScriptDir & "..\..\..")
+Global $TempConsOut = _TempFile("", "~ConOut")
+
+
 ; Check for SCITE_USERHOME Env variable and used that when specified.
 ; Else use Program directory
 If EnvGet("SCITE_USERHOME") <> "" And FileExists(EnvGet("SCITE_USERHOME") & "\AutoIt3Wrapper") Then
@@ -567,5 +676,93 @@ Func VersioningINIinit($Versioning = "SVN", $Reshelled = 0)
 	IniWrite($AutoIt3WapperIni, $Versioning, "CommandGetLastVersion_ok_txt", '')
 	IniWrite($AutoIt3WapperIni, $Versioning, "CommandGetLastVersion_ok_rc", '0')
 EndFunc   ;==>VersioningINIinit
+;===============================================================================
+;
+; Function Name:    _ProcessExitCode()
+; Description:      Returns a handle/exitcode from use of Run().
+; Parameter(s):     $i_Pid        - ProcessID returned from a Run() execution
+;                   $h_Process    - Process handle
+; Requirement(s):   None
+; Return Value(s):  On Success - Returns Process handle while Run() is executing
+;                                (use above directly after Run() line with only PID parameter)
+;                              - Returns Process Exitcode when Process does not exist
+;                                (use above with PID and Process Handle parameter returned from first UDF call)
+;                   On Failure - 0
+; Author(s):        MHz (Thanks to DaveF for posting these DllCalls in Support Forum)
+;
+;===============================================================================
+;
+Func _ProcessExitCode($i_Pid, $h_Process = 0)
+	; 0 = Return Process Handle of PID else use Handle to Return Exitcode of a PID
+	Local $v_Placeholder
+	If Not IsArray($h_Process) Then
+		; Return the process handle of a PID
+		$h_Process = DllCall('kernel32.dll', 'ptr', 'OpenProcess', 'int', 0x400, 'int', 0, 'int', $i_Pid)
+		If Not @error Then Return $h_Process
+	Else
+		; Return Process Exitcode of PID
+		$h_Process = DllCall('kernel32.dll', 'ptr', 'GetExitCodeProcess', 'ptr', $h_Process[0], 'int*', $v_Placeholder)
+		If Not @error Then Return $h_Process[2]
+	EndIf
+	Return 0
+EndFunc   ;==>_ProcessExitCode
+; Get STDOUT and ERROUT from commandline tool
+Func ShowStdOutErr($l_Handle, $ShowConsole = 1, $Replace = "", $ReplaceWith = "")
+	Local $Line = "x", $Line2 = "x", $tot_out, $err1 = 0, $err2 = 0, $cnt1 = 0, $cnt2 = 0
+	Do
+		Sleep(10)
+		$Line = StdoutRead($l_Handle)
+		$err1 = @error
+		If $Replace <> "" Then $Line = StringReplace($Line, $Replace, $ReplaceWith)
+		$tot_out &= $Line
+		If $ShowConsole Then ConsoleWrite($Line)
+		$Line2 = StderrRead($l_Handle)
+		$err2 = @error
+		If $Replace <> "" Then $Line2 = StringReplace($Line2, $Replace, $ReplaceWith)
+		$tot_out &= $Line2
+		If $ShowConsole Then ConsoleWrite($Line2)
+		; end the loop also when AutoIt3 has ended but a sub process was shelled with Run() that is still active
+		; only do this every 50 cycles to avoid cpu hunger
+		If $cnt1 = 50 Then
+			$cnt1 = 0
+			; loop another 50 times just to ensure the buffers emptied.
+			If Not ProcessExists($l_Handle) Then
+				If $cnt2 > 2 Then ExitLoop
+				$cnt2 += 1
+			EndIf
+		EndIf
+		$cnt1 += 1
+	Until ($err1 And $err2)
+	Return $tot_out
+EndFunc   ;==>ShowStdOutErr
+Func _ProcessCloseHandle($h_Process)
+	; Close the process handle of a PID
+	DllCall('kernel32.dll', 'ptr', 'CloseHandle', 'ptr', $h_Process)
+	If Not @error Then Return 1
+	Return 0
+EndFunc   ;==>_ProcessCloseHandle
+Func Write_RC_Console_Msg($text, $rc = "", $symbol = "", $Time = 1)
+	If $Time Then $text = @HOUR & ":" & @MIN & ":" & @SEC & " " & $text
+	If $symbol <> "" Then
+		If $rc == "" Then
+			ConsoleWrite($symbol & ">" & $text & @CRLF)
+		Else
+			ConsoleWrite($symbol & ">" & $text & "rc:" & $rc & @CRLF)
+		EndIf
+	Else
+		If $rc == "" Then
+			ConsoleWrite(">" & $text & @CRLF)
+		Else
+			Switch $rc
+				Case 0
+					ConsoleWrite("+>" & $text & "rc:" & $rc & @CRLF)
+				Case 1
+					ConsoleWrite("->" & $text & "rc:" & $rc & @CRLF)
+				Case Else
+					ConsoleWrite("!>" & $text & "rc:" & $rc & @CRLF)
+			EndSwitch
+		EndIf
+	EndIf
+EndFunc   ;==>Write_RC_Console_Msg
 #EndRegion Versioning Other functions
 #EndRegion Versioning functions
