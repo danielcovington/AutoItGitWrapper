@@ -6,7 +6,7 @@ I use AutoIt all the time. I like to use Git to version the scripts that I write
 
 ### TODO
 
-- [ ] Disect current AutoIt3Wrapper.au3 to find dependent functions for versioning.
+- [x] Disect current AutoIt3Wrapper.au3 to find dependent functions for versioning.
 - [ ] Settle on command syntax for git
 - [ ] implement ini changes for git
 - [ ] generalize checks against SVN to be user selectable
